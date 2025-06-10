@@ -45,4 +45,4 @@ function isAdmin(req, res, next) {
   return res.status(401).json({ success: false, message: 'Unauthorized' });
 }
 
-module.exports = { loginRouter: router, isAdmin };
+module.exports = router;

@@ -1,0 +1,28 @@
+{
+  "name": "flashpay-teketeke-backend",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000f\u0000l\u0000a\u0000s\u0000h\u0000p\u0000a\u0000y\u0000-\u0000t\u0000e\u0000k\u0000e\u0000t\u0000e\u0000k\u0000e\u0000-\u0000b\u0000a\u0000c\u0000k\u0000e\u0000n\u0000d\u0000\r\u0000 \u0000",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kirish34/flashpay-teketeke-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kirish34/flashpay-teketeke-backend/issues"
+  },
+  "homepage": "https://github.com/kirish34/flashpay-teketeke-backend#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1"
+  }
+}

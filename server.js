@@ -2,10 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ✅ Serve Static Dashboards
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ✅ Session Middleware for Login Protection
 app.use(session({
@@ -29,16 +33,19 @@ app.use('/api/flashpay', require('./routes/flashpay'));
 app.use('/api/callback', require('./routes/callback'));
 app.use('/api/cashiers', require('./routes/cashiers'));
 app.use('/api/branches', require('./routes/branches'));
-
+app.use('/api/sacco-admin', isAdmin, require('./routes/admin-sacco'));
+app.use('/api/conductor', isAdmin, require('./routes/conductor'));
+app.use('/api/pos', isAdmin, require('./routes/pos'));
+app.use('/api/summary', isAdmin, require('./routes/summary'));
 
 // ✅ Optional Admin Check Route
 app.get('/api/admin/check', isAdmin, (req, res) => {
   res.json({ message: '✅ You are logged in as admin' });
 });
 
-// ✅ Health Check (Optional)
-app.get('/', (_, res) => {
-  res.send('🚀 FlashPay-TekeTeke backend is running');
+// ✅ Redirect root to login dashboard
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/login.html'));
 });
 
 const PORT = process.env.PORT || 3000;

@@ -1,43 +1,34 @@
 // routes/login.js
 const express = require('express');
-const session = require('express-session');
 const router = express.Router();
 
 const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'flashpay123'; // Update this securely later
-
-// Setup express-session
-router.use(session({
-  secret: 'flashpay-session-secret',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { maxAge: 2 * 60 * 60 * 1000 } // 2 hours
-}));
+const ADMIN_PASSWORD = 'flashpay123'; // You can later load from env
 
 // ✅ Login endpoint
-router.post('/login', (req, res) => {
+router.post('/', (req, res) => {
   const { username, password } = req.body;
 
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
     req.session.admin = true;
-    res.json({ success: true });
+    return res.json({ success: true });
   } else {
-    res.status(401).json({ success: false, message: 'Invalid credentials' });
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
   }
 });
 
-// ✅ Logout endpoint
+// ✅ Logout
 router.post('/logout', (req, res) => {
   req.session.destroy();
   res.json({ success: true });
 });
 
-// ✅ Check session status
+// ✅ Session check
 router.get('/session', (req, res) => {
   res.json({ loggedIn: !!req.session.admin });
 });
 
-// ✅ Admin protection middleware
+// ✅ Middleware to protect admin routes
 function isAdmin(req, res, next) {
   if (req.session && req.session.admin) {
     return next();
@@ -45,4 +36,4 @@ function isAdmin(req, res, next) {
   return res.status(401).json({ success: false, message: 'Unauthorized' });
 }
 
-module.exports = router;
+module.exports = { loginRouter: router, isAdmin };

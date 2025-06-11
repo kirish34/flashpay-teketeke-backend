@@ -29,10 +29,7 @@ app.use('/api/flashpay', require('./routes/flashpay'));
 app.use('/api/callback', require('./routes/callback'));
 app.use('/api/cashiers', require('./routes/cashiers'));
 app.use('/api/branches', require('./routes/branches'));
-app.use('/api/sacco-admin', isAdmin, require('./routes/admin-sacco'));
-app.use('/api/conductor', isAdmin, require('./routes/conductor'));
-app.use('/api/pos', isAdmin, require('./routes/pos'));
-app.use('/api/summary', isAdmin, require('./routes/summary'));
+
 
 // ✅ Optional Admin Check Route
 app.get('/api/admin/check', isAdmin, (req, res) => {

@@ -43,9 +43,24 @@ app.get('/api/admin/check', isAdmin, (req, res) => {
   res.json({ message: '✅ You are logged in as admin' });
 });
 
-// ✅ Redirect root to login page
+// ✅ Root Login Selector Page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/login.html'));
+});
+
+// ✅ Supermarket Role Selector Page
+app.get('/super', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/super/super.html'));
+});
+
+// ✅ SACCO Role Selector Page
+app.get('/sacco', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/sacco/sacco.html'));
+});
+
+// ✅ Serve Supermarket Cashier POS
+app.get('/super-cashier', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/super/super-cashier.html'));
 });
 
 // ✅ Catch-all for 404 HTML

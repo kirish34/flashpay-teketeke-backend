@@ -126,7 +126,7 @@
       const name = document.getElementById("saccoName").value;
       const contact = document.getElementById("saccoContact").value;
       const till = document.getElementById("saccoTill").value;
-      const res = await fetch('/api/admin/register-sacco', {
+      const res = await fetch('https://flashpay-teketeke-backend.onrender.com/api/admin/register-sacco', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, contact, till })
       });
@@ -142,7 +142,7 @@
       const tlb = document.getElementById("matatuTLB").value;
       const till = document.getElementById("matatuTill").value;
       const sacco = document.getElementById("matatuSacco").value;
-      const res = await fetch('/api/admin/register-matatu', {
+      const res = await fetch('https://flashpay-teketeke-backend.onrender.com/api/admin/register-matatu', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plate, owner, contact, type, tlb, till, sacco })
       });
@@ -155,7 +155,7 @@
       const newContact = prompt("Edit contact info:", contact);
       const newTill = prompt("Edit till number:", till);
       if (!newName || !newContact || !newTill) return;
-      await fetch('/api/admin/update-sacco', {
+      await fetch('https://flashpay-teketeke-backend.onrender.com/api/admin/update-sacco', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, name: newName, contact: newContact, till: newTill })
       });
@@ -182,7 +182,7 @@
         sacco: prompt("SACCO Name:", matatu.sacco),
       };
       if (!updated.plate || !updated.owner) return;
-      await fetch('/api/admin/update-matatu', {
+      await fetch('https://flashpay-teketeke-backend.onrender.com/api/admin/update-matatu', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updated })
       });
@@ -199,7 +199,7 @@
     }
 
     async function loadTransactions() {
-      const res1 = await fetch('/api/admin/transactions/fees');
+      const res1 = await fetch('https://flashpay-teketeke-backend.onrender.com/api/admin/transactions/fees');
       const data1 = await res1.json();
       const list1 = document.getElementById('transactionList');
       list1.innerHTML = '';
@@ -208,7 +208,7 @@
         list1.innerHTML += row;
       });
 
-      const res2 = await fetch('/api/admin/transactions/loans');
+      const res2 = await fetch('https://flashpay-teketeke-backend.onrender.com/api/admin/transactions/loans');
       const data2 = await res2.json();
       const list2 = document.getElementById('loanTransactionList');
       list2.innerHTML = '';

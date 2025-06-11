@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Serve Static Dashboards
+// ✅ Serve Static Files from "public"
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ✅ Session Middleware for Login Protection
@@ -23,8 +23,12 @@ app.use(session({
 const { loginRouter, isAdmin } = require('./routes/login');
 app.use('/api/login', loginRouter);
 
-// ✅ Admin Routes (Protected)
+// ✅ Protected Admin Routes
 app.use('/api/admin', isAdmin, require('./routes/admin'));
+app.use('/api/sacco-admin', isAdmin, require('./routes/admin-sacco'));
+app.use('/api/conductor', isAdmin, require('./routes/conductor'));
+app.use('/api/pos', isAdmin, require('./routes/pos'));
+app.use('/api/summary', isAdmin, require('./routes/summary'));
 
 // ✅ Public Routes
 app.use('/api/saccos', require('./routes/saccos'));
@@ -33,19 +37,20 @@ app.use('/api/flashpay', require('./routes/flashpay'));
 app.use('/api/callback', require('./routes/callback'));
 app.use('/api/cashiers', require('./routes/cashiers'));
 app.use('/api/branches', require('./routes/branches'));
-app.use('/api/sacco-admin', isAdmin, require('./routes/admin-sacco'));
-app.use('/api/conductor', isAdmin, require('./routes/conductor'));
-app.use('/api/pos', isAdmin, require('./routes/pos'));
-app.use('/api/summary', isAdmin, require('./routes/summary'));
 
-// ✅ Optional Admin Check Route
+// ✅ Admin Login Check
 app.get('/api/admin/check', isAdmin, (req, res) => {
   res.json({ message: '✅ You are logged in as admin' });
 });
 
-// ✅ Redirect root to login dashboard
+// ✅ Redirect root to login page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/login.html'));
+});
+
+// ✅ Catch-all for 404 HTML
+app.use((req, res, next) => {
+  res.status(404).send('🔍 Page not found');
 });
 
 const PORT = process.env.PORT || 3000;

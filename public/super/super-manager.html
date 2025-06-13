@@ -71,7 +71,7 @@
   </div>
   <div class="container">
     <div class="card">
-      <h3>🏬 Supermarket Info</h3>
+      <h3>🏪 Supermarket Info</h3>
       <p>Supermarket: <strong id="supermarketName">Loading...</strong></p>
       <p>Branch: <strong id="branchName">Loading...</strong></p>
     </div>
@@ -95,7 +95,7 @@
     </div>
 
     <div class="card">
-      <h3>📅 Today's Transactions</h3>
+      <h3>🗕️ Today's Transactions</h3>
       <table>
         <thead>
           <tr><th>Time</th><th>Amount</th><th>Cashier</th></tr>
@@ -136,7 +136,7 @@
       data.forEach(cashier => {
         const row = `<tr>
           <td>${cashier.name || 'N/A'}</td>
-          <td>${cashier.ussd || '-'}</td>
+          <td>${cashier.ussd_code || '-'}</td>
           <td>${cashier.status || 'Active'}</td>
         </tr>`;
         table.innerHTML += row;

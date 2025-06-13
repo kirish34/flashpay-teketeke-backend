@@ -40,7 +40,6 @@
     <div class="tab" data-tab="logsTab">Logs</div>
   </div>
 
-  <!-- Supermarket -->
   <div class="tab-content active" id="supermarketTab">
     <div class="search-box"><label>Search Supermarkets</label><input type="text" id="searchSuper"></div>
     <div id="superSummary" class="summary-box">Total: 0</div>
@@ -51,7 +50,6 @@
     <table id="supermarketTable"></table>
   </div>
 
-  <!-- Branch -->
   <div class="tab-content" id="branchTab">
     <div class="search-box"><label>Search Branches</label><input type="text" id="searchBranch"></div>
     <div id="branchSummary" class="summary-box">Total: 0</div>
@@ -64,7 +62,6 @@
     <table id="branchTable"></table>
   </div>
 
-  <!-- Manager -->
   <div class="tab-content" id="managerTab">
     <div class="search-box"><label>Search Managers</label><input type="text" id="searchManager"></div>
     <form id="managerForm">
@@ -77,7 +74,6 @@
     <table id="managerTable"></table>
   </div>
 
-  <!-- Cashier -->
   <div class="tab-content" id="cashierTab">
     <div class="search-box"><label>Search Cashiers</label><input type="text" id="searchCashier"></div>
     <div id="cashierSummary" class="summary-box">Total: 0</div>
@@ -90,7 +86,6 @@
     <table id="cashierTable"></table>
   </div>
 
-  <!-- Logs -->
   <div class="tab-content" id="logsTab">
     <h3>🧾 Deletion Logs</h3>
     <table id="logTable"><tr><th>#</th><th>Type</th><th>ID</th><th>Time</th></tr></table>
@@ -112,6 +107,15 @@
       window.location.href = '/login.html';
     }
     checkSession();
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
 
     let allData = {};
     async function deleteEntry(type, id) {
@@ -171,6 +175,61 @@
 
     ['searchSuper', 'searchBranch', 'searchCashier', 'searchManager'].forEach(id => {
       document.getElementById(id).addEventListener('input', renderAllTables);
+    });
+
+    // Supermarket form
+    document.getElementById('supermarketForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = document.getElementById('supermarketName').value;
+      const { error } = await supabase.from('supermarkets').insert([{ name }]);
+      if (error) alert('Error saving supermarket: ' + error.message);
+      else {
+        document.getElementById('supermarketName').value = '';
+        loadData();
+      }
+    });
+
+    // Branch form
+    document.getElementById('branchForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = document.getElementById('branchName').value;
+      const till = document.getElementById('branchTill').value;
+      const supermarket = document.getElementById('branchSupermarketSelect').value;
+      const { error } = await supabase.from('branches').insert([{ name, till, supermarket }]);
+      if (error) alert('Error saving branch: ' + error.message);
+      else {
+        document.getElementById('branchForm').reset();
+        loadData();
+      }
+    });
+
+    // Manager form
+    document.getElementById('managerForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const full_name = document.getElementById('managerName').value;
+      const username = document.getElementById('managerUsername').value;
+      const password = document.getElementById('managerPassword').value;
+      const branch = document.getElementById('managerBranchSelect').value;
+      const { error } = await supabase.from('managers').insert([{ full_name, username, password, branch }]);
+      if (error) alert('Error saving manager: ' + error.message);
+      else {
+        document.getElementById('managerForm').reset();
+        loadData();
+      }
+    });
+
+    // Cashier form
+    document.getElementById('cashierForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const cashier_id = document.getElementById('cashierId').value;
+      const ussd_code = document.getElementById('cashierUssd').value;
+      const branch = document.getElementById('cashierBranchSelect').value;
+      const { error } = await supabase.from('cashiers').insert([{ cashier_id, ussd_code, branch }]);
+      if (error) alert('Error saving cashier: ' + error.message);
+      else {
+        document.getElementById('cashierForm').reset();
+        loadData();
+      }
     });
 
     window.addEventListener('DOMContentLoaded', loadData);

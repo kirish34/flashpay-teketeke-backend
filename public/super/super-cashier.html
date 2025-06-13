@@ -78,28 +78,15 @@
       border-radius: 5px;
       display: none;
     }
-    .history {
-      margin-top: 30px;
-      background: #f9f9f9;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 15px;
-    }
-    .history h3 {
-      margin-top: 0;
-    }
-    .history-entry {
-      padding: 8px;
-      border-bottom: 1px solid #ddd;
-    }
-    .history-entry:last-child {
-      border-bottom: none;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Flash Pay - Cashier</h2>
+    <p><strong>Cashier:</strong> <span id="cashierName">Loading...</span></p>
+    <p><strong>Branch:</strong> <span id="branchName">Loading...</span></p>
+    <p><strong>USSD Code:</strong> <span id="ussdCode">Loading...</span></p>
+
     <div class="form-group">
       <label for="amount">Enter Amount (KES)</label>
       <input type="number" id="amount" placeholder="e.g. 250">
@@ -108,39 +95,65 @@
     <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     <div id="feedback" class="message"></div>
     <div id="statusBox" class="status-box"></div>
-    <div class="history">
-      <h3>📜 Transaction History</h3>
-      <div id="historyList"></div>
-    </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    let cashierId = '';
+    const supabase = window.supabase.createClient(
+      'https://chdqapsfrznipmvuzucb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoZHFhcHNmcnpuaXBtdnV6dWNiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTQ4MjY3NywiZXhwIjoyMDY1MDU4Njc3fQ.Uem6HAQ1HEjxhdBUGRYsuyeQjxyTOST9Z2VTtWrbhbU'
+    );
+
+    let latestBillId = null;
 
     async function getSession() {
-      const res = await fetch('/api/auth/session');
-      const data = await res.json();
-      if (!data.loggedIn || !data.cashierId) {
-        window.location.href = 'login.html';
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/super/cashier-login.html';
         return;
       }
-      cashierId = data.cashierId;
+      const { data: profile } = await supabase.from('cashiers').select('*').eq('email', user.email).single();
+      if (!profile) {
+        document.getElementById('cashierName').textContent = 'Unknown';
+        return;
+      }
+      window.cashierProfile = profile;
+      document.getElementById('cashierName').textContent = profile.name;
+      document.getElementById('branchName').textContent = profile.branch || 'N/A';
+      document.getElementById('ussdCode').textContent = profile.ussd_code || 'N/A';
+      listenToBills();
+      startPollingStatus();
     }
 
     async function logout() {
-      await fetch('/api/auth/logout');
-      window.location.href = 'login.html';
+      await supabase.auth.signOut();
+      window.location.href = '/super/cashier-login.html';
     }
 
-    async function listenToPOS() {
-      try {
-        const res = await fetch(`/api/pos/latest/${encodeURIComponent(cashierId)}`);
-        const data = await res.json();
-        if (data && data.amount) {
-          document.getElementById('amount').value = data.amount;
+    async function listenToBills() {
+      const { data } = await supabase
+        .from('bills')
+        .select('*')
+        .eq('cashier', window.cashierProfile.name)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+      const statusBox = document.getElementById('statusBox');
+      if (data && data.length > 0) {
+        const latest = data[0];
+        latestBillId = latest.id;
+        statusBox.style.display = 'block';
+        if (latest.status === 'Pending') {
+          statusBox.textContent = `🕐 Awaiting Payment via ${window.cashierProfile.ussd_code}`;
+          statusBox.style.background = '#fff3cd';
+          statusBox.style.color = '#856404';
+        } else {
+          statusBox.textContent = `✅ Last Bill Paid: KES ${latest.amount}`;
+          statusBox.style.background = '#d4edda';
+          statusBox.style.color = '#155724';
         }
-      } catch (err) {
-        console.error('POS listener failed', err);
+      } else {
+        statusBox.style.display = 'none';
       }
     }
 
@@ -156,63 +169,43 @@
         return;
       }
 
-      try {
-        const res = await fetch('/api/cashier/initiate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: parseFloat(amount), cashierId })
-        });
-
-        const result = await res.json();
-        if (result.success) {
-          feedback.textContent = '✅ Payment initiated successfully!';
-          feedback.className = 'message success';
-
-          statusBox.textContent = '⏳ Waiting for customer to complete M-Pesa payment...';
-          statusBox.style.display = 'block';
-
-          const txId = result.txId;
-          pollStatus(txId, amount);
-        } else {
-          feedback.textContent = '❌ ' + result.message;
-          feedback.className = 'message error';
-          statusBox.style.display = 'none';
+      const { error } = await supabase.from('bills').insert([
+        {
+          amount: parseFloat(amount),
+          cashier: window.cashierProfile.name,
+          branch: window.cashierProfile.branch,
+          ussd_code: window.cashierProfile.ussd_code,
+          status: 'Pending',
+          timestamp: new Date().toISOString()
         }
-        feedback.style.display = 'block';
-      } catch (err) {
-        feedback.textContent = '❌ Failed to initiate payment';
+      ]);
+
+      if (error) {
+        feedback.textContent = '❌ ' + error.message;
         feedback.className = 'message error';
         feedback.style.display = 'block';
-        statusBox.style.display = 'none';
+        return;
       }
+
+      feedback.textContent = '✅ Payment logged. Waiting for M-Pesa confirmation...';
+      feedback.className = 'message success';
+      feedback.style.display = 'block';
+      listenToBills();
     }
 
-    async function pollStatus(txId, amount) {
-      const statusBox = document.getElementById('statusBox');
-      const interval = setInterval(async () => {
-        const res = await fetch(`/api/cashier/status/${txId}`);
-        const status = await res.json();
-        if (status.final) {
-          const statusMsg = `✅ Payment ${status.status}`;
-          statusBox.textContent = statusMsg;
-          statusBox.style.background = status.status === 'Paid' ? '#d4edda' : '#f8d7da';
-          statusBox.style.color = status.status === 'Paid' ? '#155724' : '#721c24';
-
-          const historyList = document.getElementById('historyList');
-          const entry = document.createElement('div');
-          entry.className = 'history-entry';
-          entry.textContent = `${new Date().toLocaleTimeString()} - KES ${amount} - ${status.status}`;
-          historyList.prepend(entry);
-
-          clearInterval(interval);
+    function startPollingStatus() {
+      setInterval(async () => {
+        if (!latestBillId) return;
+        const { data } = await supabase.from('bills').select('status').eq('id', latestBillId).single();
+        if (data && data.status === 'Paid') {
+          document.getElementById('statusBox').textContent = '✅ Payment Confirmed!';
+          document.getElementById('statusBox').style.background = '#d4edda';
+          document.getElementById('statusBox').style.color = '#155724';
         }
-      }, 3000);
+      }, 5000);
     }
 
-    getSession().then(() => {
-      listenToPOS();
-      setInterval(listenToPOS, 5000);
-    });
+    getSession();
   </script>
 </body>
 </html>

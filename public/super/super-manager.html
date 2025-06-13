@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlashPay Branch Manager Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #eef3f7;
+    }
+    header {
+      background: #28a745;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #28a745;
+    }
+    .card h3 {
+      margin-top: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: #dff0e0;
+    }
+    .logout {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+    }
+    .logout button {
+      padding: 8px 16px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .logout button:hover {
+      background: darkred;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏪 FlashPay Branch Manager Dashboard</h1>
+  </header>
+  <div class="logout">
+    <button onclick="logout()">Logout</button>
+  </div>
+  <div class="container">
+    <div class="card">
+      <h3>🏬 Supermarket Info</h3>
+      <p>Supermarket: <strong id="supermarketName">Loading...</strong></p>
+      <p>Branch: <strong id="branchName">Loading...</strong></p>
+    </div>
+
+    <div class="card">
+      <h3>📊 Today's Summary</h3>
+      <p>Total Sales: KES <strong id="totalSales">0</strong></p>
+      <p>Transactions: <strong id="totalTx">0</strong></p>
+    </div>
+
+    <div class="card">
+      <h3>👥 Cashier List</h3>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>USSD Code</th><th>Status</th></tr>
+        </thead>
+        <tbody id="cashierTable">
+          <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>📅 Today's Transactions</h3>
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Amount</th><th>Cashier</th></tr>
+        </thead>
+        <tbody id="transactionTable">
+          <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://chdqapsfrznipmvuzucb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoZHFhcHNmcnpuaXBtdnV6dWNiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTQ4MjY3NywiZXhwIjoyMDY1MDU4Njc3fQ.Uem6HAQ1HEjxhdBUGRYsuyeQjxyTOST9Z2VTtWrbhbU'
+    );
+
+    function logout() {
+      window.location.href = '/super/manager-login.html';
+    }
+
+    async function loadCashiers() {
+      const { data, error } = await supabase.from('cashiers').select('*');
+      const table = document.getElementById('cashierTable');
+      table.innerHTML = '';
+
+      if (error) {
+        table.innerHTML = `<tr><td colspan="3">Error loading cashiers: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data.length) {
+        table.innerHTML = `<tr><td colspan="3">No cashiers found</td></tr>`;
+        return;
+      }
+
+      data.forEach(cashier => {
+        const row = `<tr>
+          <td>${cashier.name || 'N/A'}</td>
+          <td>${cashier.ussd || '-'}</td>
+          <td>${cashier.status || 'Active'}</td>
+        </tr>`;
+        table.innerHTML += row;
+      });
+    }
+
+    async function loadTransactions() {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('bills')
+        .select('*')
+        .gte('timestamp', today + 'T00:00:00')
+        .lte('timestamp', today + 'T23:59:59');
+
+      const txTable = document.getElementById('transactionTable');
+      const totalSales = document.getElementById('totalSales');
+      const totalTx = document.getElementById('totalTx');
+
+      txTable.innerHTML = '';
+      if (error || !data.length) {
+        txTable.innerHTML = `<tr><td colspan="3">No transactions found</td></tr>`;
+        return;
+      }
+
+      let total = 0;
+      data.forEach(tx => {
+        total += parseFloat(tx.amount || 0);
+        const row = `<tr>
+          <td>${new Date(tx.timestamp).toLocaleTimeString()}</td>
+          <td>KES ${tx.amount}</td>
+          <td>${tx.cashier || 'N/A'}</td>
+        </tr>`;
+        txTable.innerHTML += row;
+      });
+
+      totalSales.textContent = total;
+      totalTx.textContent = data.length;
+    }
+
+    async function loadBranchInfo() {
+      const { data, error } = await supabase.from('branches').select('*').limit(1);
+      if (data && data.length) {
+        document.getElementById('supermarketName').textContent = data[0].name || 'N/A';
+        document.getElementById('branchName').textContent = data[0].location || 'N/A';
+      }
+    }
+
+    loadCashiers();
+    loadTransactions();
+    loadBranchInfo();
+  </script>
+</body>
+</html>
